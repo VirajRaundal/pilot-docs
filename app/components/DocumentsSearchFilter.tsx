@@ -412,7 +412,7 @@ export default function DocumentsSearchFilter({
             
             {filters.searchTerm && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Search: "{filters.searchTerm}"
+                Search: &ldquo;{filters.searchTerm}&rdquo;
                 <button
                   onClick={() => updateFilter('searchTerm', '')}
                   className="ml-1 inline-flex items-center justify-center w-4 h-4 text-blue-400 hover:bg-blue-200 hover:text-blue-600 rounded-full"
@@ -448,7 +448,7 @@ export default function DocumentsSearchFilter({
 
             {filters.pilotName && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                Pilot: "{filters.pilotName}"
+                Pilot: &ldquo;{filters.pilotName}&rdquo;
                 <button
                   onClick={() => updateFilter('pilotName', '')}
                   className="ml-1 inline-flex items-center justify-center w-4 h-4 text-orange-400 hover:bg-orange-200 hover:text-orange-600 rounded-full"

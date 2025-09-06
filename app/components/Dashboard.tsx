@@ -273,10 +273,20 @@ function ProgressRing({ percentage, size = 120, strokeWidth = 8 }: { percentage:
   )
 }
 
+// Document stats type
+interface DocumentStats {
+  total: number
+  pending: number
+  approved: number
+  rejected: number
+  expired: number
+  expiringSoon: number
+}
+
 // Pilot Dashboard Component
 function PilotDashboard({ user }: { user: UserWithRole }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<DocumentStats | null>(null)
   const [loading, setLoading] = useState(true)
 
   const handleUploadSuccess = () => {
