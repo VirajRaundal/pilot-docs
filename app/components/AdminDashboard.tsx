@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   UserGroupIcon,
   DocumentTextIcon,
@@ -10,17 +10,12 @@ import {
   ExclamationTriangleIcon,
   ChartBarIcon,
   BellIcon,
-  CalendarDaysIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  EyeIcon
+  ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline'
 import { format, formatDistanceToNow } from 'date-fns'
 import { 
   fetchAllDocuments,
-  getExpiringDocuments,
-  DocumentWithPilot,
-  DocumentStatus
+  DocumentWithPilot
 } from '../../lib/documents'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
@@ -52,7 +47,7 @@ interface ActivityItem {
   timestamp: string
 }
 
-export default function AdminDashboard({ userId }: AdminDashboardProps) {
+export default function AdminDashboard({ userId: _userId }: AdminDashboardProps) {
   const [documentStats, setDocumentStats] = useState<DocumentStats>({
     total: 0,
     pending: 0,
@@ -69,11 +64,7 @@ export default function AdminDashboard({ userId }: AdminDashboardProps) {
   const [expiringDocuments, setExpiringDocuments] = useState<DocumentWithPilot[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -90,7 +81,11 @@ export default function AdminDashboard({ userId }: AdminDashboardProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [loadDashboardData])
 
   const loadDocumentStats = async () => {
     try {

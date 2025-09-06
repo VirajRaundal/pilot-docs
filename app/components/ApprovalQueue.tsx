@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   CheckCircleIcon,
   XCircleIcon,
@@ -16,8 +16,7 @@ import {
   fetchDocumentsByStatus,
   updateDocumentStatus,
   getDocumentWithUrl,
-  DocumentWithPilot,
-  DocumentStatus
+  DocumentWithPilot
 } from '../../lib/documents'
 import toast from 'react-hot-toast'
 

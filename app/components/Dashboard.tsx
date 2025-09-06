@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { 
   ArrowLeftEndOnRectangleIcon, 
-  UserIcon, 
   DocumentTextIcon, 
-  CogIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ClockIcon,
@@ -19,7 +17,6 @@ import {
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import DocumentUpload from './DocumentUpload'
-import DocumentsList from './DocumentsList'
 import DocumentsListWithSearch from './DocumentsListWithSearch'
 import RoleAssignment from './RoleAssignment'
 import AdminDashboard from './AdminDashboard'
@@ -293,11 +290,7 @@ function PilotDashboard({ user }: { user: UserWithRole }) {
     setRefreshTrigger(prev => prev + 1)
   }
 
-  useEffect(() => {
-    loadStats()
-  }, [refreshTrigger, user.id])
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true)
       const documentStats = await getDocumentStats(user.id)
@@ -307,7 +300,11 @@ function PilotDashboard({ user }: { user: UserWithRole }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user.id])
+
+  useEffect(() => {
+    loadStats()
+  }, [refreshTrigger, loadStats])
 
   const requiredDocumentTypes: DocumentType[] = ['noc', 'medical_certificate', 'license_certification', 'alcohol_test', 'training_records']
   

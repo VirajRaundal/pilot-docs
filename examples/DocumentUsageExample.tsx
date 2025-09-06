@@ -183,7 +183,7 @@ export default function DocumentUsageExample() {
       console.log('Documents expiring soon:', expiringDocs)
       
       if (expiringDocs.length > 0) {
-        toast.warning(`${expiringDocs.length} documents expiring soon!`)
+        toast.error(`${expiringDocs.length} documents expiring soon!`)
       }
     } catch (error) {
       console.error('Failed to load expiring documents:', error)
