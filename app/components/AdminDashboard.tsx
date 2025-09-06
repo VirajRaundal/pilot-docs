@@ -18,6 +18,7 @@ import {
   DocumentWithPilot
 } from '../../lib/documents'
 import { supabase } from '../../lib/supabase'
+import { AdminDashboardSkeleton } from './SkeletonLoaders'
 import toast from 'react-hot-toast'
 
 interface AdminDashboardProps {
@@ -206,14 +207,7 @@ export default function AdminDashboard({ userId: _userId }: AdminDashboardProps)
   }
 
   if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading dashboard...</span>
-        </div>
-      </div>
-    )
+    return <AdminDashboardSkeleton />
   }
 
   return (

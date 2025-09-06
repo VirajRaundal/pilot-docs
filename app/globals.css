@@ -22,11 +22,51 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  font-display: swap;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   -webkit-text-size-adjust: 100%;
+  /* Prevent layout shifts */
+  overflow-x: hidden;
+}
+
+/* CLS Prevention */
+.prevent-cls {
+  contain: layout;
+}
+
+/* Reserve space for skeleton loading */
+.skeleton-container {
+  min-height: 200px;
+  contain: layout style;
+}
+
+/* Prevent layout shifts from images */
+img {
+  max-width: 100%;
+  height: auto;
+  font-size: 0; /* Prevent alt text layout shift */
+}
+
+/* Prevent button text shifting */
+button, .button {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stable table layout */
+table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Prevent content jumping during load */
+.content-container {
+  min-height: 100vh;
+  position: relative;
 }
 
 /* Safe area handling for mobile devices */

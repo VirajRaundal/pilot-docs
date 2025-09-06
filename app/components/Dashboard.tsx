@@ -21,6 +21,7 @@ import DocumentsListWithSearch from './DocumentsListWithSearch'
 import RoleAssignment from './RoleAssignment'
 import AdminDashboard from './AdminDashboard'
 import ApprovalQueue from './ApprovalQueue'
+import { DashboardStatsSkeleton, DocumentListSkeleton } from './SkeletonLoaders'
 import { getDocumentStats, DocumentType } from '../../lib/documents'
 
 // Define types locally to avoid import issues
@@ -345,59 +346,63 @@ function PilotDashboard({ user }: { user: UserWithRole }) {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        {/* Total Documents */}
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Total Documents</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-                {loading ? '-' : stats?.total || 0}
-              </p>
+      {loading ? (
+        <DashboardStatsSkeleton />
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+          {/* Total Documents */}
+          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Total Documents</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+                  {stats?.total || 0}
+                </p>
+              </div>
+              <DocumentTextIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-blue-500 flex-shrink-0 ml-2" />
             </div>
-            <DocumentTextIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-blue-500 flex-shrink-0 ml-2" />
           </div>
-        </div>
 
-        {/* Approved Documents */}
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Approved</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">
-                {loading ? '-' : stats?.approved || 0}
-              </p>
+          {/* Approved Documents */}
+          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Approved</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">
+                  {stats?.approved || 0}
+                </p>
+              </div>
+              <CheckCircleIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-green-500 flex-shrink-0 ml-2" />
             </div>
-            <CheckCircleIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-green-500 flex-shrink-0 ml-2" />
           </div>
-        </div>
 
-        {/* Pending Documents */}
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Pending</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-600">
-                {loading ? '-' : stats?.pending || 0}
-              </p>
+          {/* Pending Documents */}
+          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Pending</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-yellow-600">
+                  {stats?.pending || 0}
+                </p>
+              </div>
+              <ClockIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-yellow-500 flex-shrink-0 ml-2" />
             </div>
-            <ClockIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-yellow-500 flex-shrink-0 ml-2" />
           </div>
-        </div>
 
-        {/* Expiring Soon */}
-        <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Expiring Soon</p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">
-                {loading ? '-' : stats?.expiringSoon || 0}
-              </p>
+          {/* Expiring Soon */}
+          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600 mb-1 truncate">Expiring Soon</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">
+                  {stats?.expiringSoon || 0}
+                </p>
+              </div>
+              <ExclamationTriangleIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange-500 flex-shrink-0 ml-2" />
             </div>
-            <ExclamationTriangleIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-orange-500 flex-shrink-0 ml-2" />
           </div>
         </div>
-      </div>
+      )}
 
       {/* Progress and Status Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

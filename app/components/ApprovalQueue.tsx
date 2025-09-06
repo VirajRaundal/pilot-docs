@@ -18,6 +18,7 @@ import {
   getDocumentWithUrl,
   DocumentWithPilot
 } from '../../lib/documents'
+import { ApprovalQueueSkeleton } from './SkeletonLoaders'
 import toast from 'react-hot-toast'
 
 interface ApprovalQueueProps {
@@ -183,14 +184,7 @@ export default function ApprovalQueue({ onDocumentUpdate }: ApprovalQueueProps) 
   }
 
   if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Loading approval queue...</span>
-        </div>
-      </div>
-    )
+    return <ApprovalQueueSkeleton />
   }
 
   return (
