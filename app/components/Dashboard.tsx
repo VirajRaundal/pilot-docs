@@ -467,7 +467,7 @@ function PilotDashboard({ user }: { user: UserWithRole }) {
       </div>
 
       {/* Call-to-Action Section */}
-      {!loading && ((stats?.pending > 0) || getMissingDocuments() > 0 || (stats?.expiringSoon > 0)) && (
+      {!loading && ((stats?.pending && stats.pending > 0) || getMissingDocuments() > 0 || (stats?.expiringSoon && stats.expiringSoon > 0)) && (
         <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg sm:rounded-xl p-4 sm:p-6">
           <div className="flex items-start">
             <ExclamationTriangleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500 mt-1 mr-2 sm:mr-3 flex-shrink-0" />
@@ -479,7 +479,7 @@ function PilotDashboard({ user }: { user: UserWithRole }) {
                     • {getMissingDocuments()} required document{getMissingDocuments() > 1 ? 's' : ''} missing
                   </p>
                 )}
-                {stats?.expiringSoon > 0 && (
+                {stats?.expiringSoon && stats.expiringSoon > 0 && (
                   <p className="text-xs sm:text-sm text-orange-800">
                     • {stats.expiringSoon} document{stats.expiringSoon > 1 ? 's' : ''} expiring soon
                   </p>
