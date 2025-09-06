@@ -59,7 +59,12 @@ export default function AuthForm() {
         }
       }
     } catch (error) {
-      toast.error('An unexpected error occurred')
+      // If error is an Error object, display its message
+      if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error('An unexpected error occurred')
+      }
     } finally {
       setLoading(false)
     }

@@ -101,7 +101,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 </h3>
                 <p className="text-blue-700">
                   Here you can upload and manage your flight documents, check approval status, 
-                  and ensure you're compliant with all requirements.
+                  and ensure you are compliant with all requirements.
                 </p>
               </div>
               
