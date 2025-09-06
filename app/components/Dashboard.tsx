@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { 
   ArrowLeftEndOnRectangleIcon, 
@@ -8,6 +9,9 @@ import {
   CogIcon 
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import DocumentUpload from './DocumentUpload'
+import DocumentsList from './DocumentsList'
+import RoleAssignment from './RoleAssignment'
 
 // Define types locally to avoid import issues
 interface UserWithRole {
@@ -94,98 +98,15 @@ export default function Dashboard({ user }: DashboardProps) {
           
           {/* Role-specific content */}
           {isPilot(user) && (
-            <div className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-blue-800 mb-2">
-                  Welcome, Pilot! 
-                </h3>
-                <p className="text-blue-700">
-                  Here you can upload and manage your flight documents, check approval status, 
-                  and ensure you are compliant with all requirements.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <DocumentTextIcon className="h-8 w-8 text-blue-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Upload Documents</h4>
-                  <p className="text-sm text-gray-600 mt-1">Add new certificates and licenses</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <UserIcon className="h-8 w-8 text-green-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Check Status</h4>
-                  <p className="text-sm text-gray-600 mt-1">View approval status of documents</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <CogIcon className="h-8 w-8 text-purple-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Profile Settings</h4>
-                  <p className="text-sm text-gray-600 mt-1">Update your pilot information</p>
-                </div>
-              </div>
-            </div>
+            <PilotDashboard user={user} />
           )}
 
           {isAdmin(user) && (
-            <div className="space-y-6">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-green-800 mb-2">
-                  Admin Dashboard
-                </h3>
-                <p className="text-green-700">
-                  Manage pilot documents, review submissions, approve or reject documents, 
-                  and oversee the entire system.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <DocumentTextIcon className="h-8 w-8 text-orange-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Pending Reviews</h4>
-                  <p className="text-sm text-gray-600 mt-1">Documents awaiting approval</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <UserIcon className="h-8 w-8 text-blue-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Manage Pilots</h4>
-                  <p className="text-sm text-gray-600 mt-1">View and manage pilot accounts</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <CogIcon className="h-8 w-8 text-red-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">System Settings</h4>
-                  <p className="text-sm text-gray-600 mt-1">Configure system preferences</p>
-                </div>
-              </div>
-            </div>
+            <AdminDashboard user={user} />
           )}
 
           {isInspector(user) && (
-            <div className="space-y-6">
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-purple-800 mb-2">
-                  Inspector Portal
-                </h3>
-                <p className="text-purple-700">
-                  Review pilot documents, conduct compliance checks, and generate inspection reports.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                  <DocumentTextIcon className="h-8 w-8 text-purple-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Document Review</h4>
-                  <p className="text-sm text-gray-600 mt-1">Review submitted documents</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                  <UserIcon className="h-8 w-8 text-indigo-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Compliance Check</h4>
-                  <p className="text-sm text-gray-600 mt-1">Verify pilot compliance status</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                  <CogIcon className="h-8 w-8 text-gray-600 mb-2" />
-                  <h4 className="font-medium text-gray-900">Reports</h4>
-                  <p className="text-sm text-gray-600 mt-1">Generate inspection reports</p>
-                </div>
-              </div>
-            </div>
+            <InspectorDashboard user={user} />
           )}
 
           {!user.role && (
@@ -200,6 +121,92 @@ export default function Dashboard({ user }: DashboardProps) {
           )}
         </div>
       </main>
+    </div>
+  )
+}
+
+// Pilot Dashboard Component
+function PilotDashboard({ user }: { user: UserWithRole }) {
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  const handleUploadSuccess = () => {
+    setRefreshTrigger(prev => prev + 1)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="text-lg font-medium text-blue-800 mb-2">
+          Welcome, Pilot! 
+        </h3>
+        <p className="text-blue-700">
+          Here you can upload and manage your flight documents, check approval status, 
+          and ensure you are compliant with all requirements.
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Upload Section */}
+        <DocumentUpload 
+          userId={user.id} 
+          onUploadSuccess={handleUploadSuccess}
+        />
+        
+        {/* Documents List */}
+        <DocumentsList 
+          userId={user.id}
+          userRole="pilot"
+          refreshTrigger={refreshTrigger}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Admin Dashboard Component
+function AdminDashboard({ user }: { user: UserWithRole }) {
+  return (
+    <div className="space-y-6">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <h3 className="text-lg font-medium text-green-800 mb-2">
+          Admin Dashboard
+        </h3>
+        <p className="text-green-700">
+          Manage pilot documents, review submissions, approve or reject documents, 
+          and oversee the entire system.
+        </p>
+      </div>
+      
+      {/* Role Assignment */}
+      <RoleAssignment />
+      
+      {/* All Documents List for Admin */}
+      <DocumentsList 
+        userId={user.id}
+        userRole="admin"
+      />
+    </div>
+  )
+}
+
+// Inspector Dashboard Component
+function InspectorDashboard({ user }: { user: UserWithRole }) {
+  return (
+    <div className="space-y-6">
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <h3 className="text-lg font-medium text-purple-800 mb-2">
+          Inspector Portal
+        </h3>
+        <p className="text-purple-700">
+          Review pilot documents, conduct compliance checks, and generate inspection reports.
+        </p>
+      </div>
+      
+      {/* All Documents List for Inspector (Read-only) */}
+      <DocumentsList 
+        userId={user.id}
+        userRole="inspector"
+      />
     </div>
   )
 }

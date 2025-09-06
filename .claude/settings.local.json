@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//var/folders/rq/14r_kf1x4hl84jjq9r2xp0lh0000gn/T/TemporaryItems/NSIRD_screencaptureui_g6VQhy/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
