@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   description: 'Pilot Document Management System',
   keywords: 'pilot, aviation, document management, compliance',
   authors: [{ name: 'Pilot Management Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
   robots: {
     index: true,
     follow: true,
@@ -19,6 +18,8 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
   },
 }
+
+export const viewport = 'width=device-width, initial-scale=1, maximum-scale=5'
 
 export default function RootLayout({
   children,
