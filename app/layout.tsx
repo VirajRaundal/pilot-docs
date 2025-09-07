@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import QueryClientProvider from './components/QueryClientProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -20,8 +21,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className="font-sans antialiased">
-        {children}
-        <SpeedInsights />
+        <QueryClientProvider>
+          {children}
+          <SpeedInsights />
+        </QueryClientProvider>
       </body>
     </html>
   )

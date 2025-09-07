@@ -12,7 +12,8 @@ import {
   BellIcon,
   ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns/format'
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow'
 import { 
   fetchAllDocuments,
   DocumentWithPilot

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { 
   ArrowLeftEndOnRectangleIcon, 
@@ -16,13 +16,17 @@ import {
   HomeIcon
 } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
-import DocumentUpload from './DocumentUpload'
-import DocumentsListWithSearch from './DocumentsListWithSearch'
-import RoleAssignment from './RoleAssignment'
-import AdminDashboard from './AdminDashboard'
-import ApprovalQueue from './ApprovalQueue'
+const DocumentUpload = lazy(() => import('./DocumentUpload'))
 import { DashboardStatsSkeleton, DocumentListSkeleton } from './SkeletonLoaders'
-import { getDocumentStats, DocumentType } from '../../lib/documents'
+import { DocumentType } from '../../lib/documents'
+import { useDocumentStats } from '../hooks/useDocuments'
+import { lazy, Suspense } from 'react'
+
+// Dynamic imports for code splitting
+const DocumentsListWithSearch = lazy(() => import('./DocumentsListWithSearch'))
+const RoleAssignment = lazy(() => import('./RoleAssignment'))
+const AdminDashboard = lazy(() => import('./AdminDashboard'))
+const ApprovalQueue = lazy(() => import('./ApprovalQueue'))
 
 // Define types locally to avoid import issues
 interface UserWithRole {
@@ -284,28 +288,20 @@ interface DocumentStats {
 // Pilot Dashboard Component
 function PilotDashboard({ user }: { user: UserWithRole }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [stats, setStats] = useState<DocumentStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  
+  // Use React Query for better performance and caching
+  const { data: stats, isLoading: loading, refetch } = useDocumentStats(user.id)
 
   const handleUploadSuccess = () => {
     setRefreshTrigger(prev => prev + 1)
+    // Refetch data when upload succeeds
+    refetch()
   }
 
-  const loadStats = useCallback(async () => {
-    try {
-      setLoading(true)
-      const documentStats = await getDocumentStats(user.id)
-      setStats(documentStats)
-    } catch (error) {
-      console.error('Error loading pilot stats:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [user.id])
-
+  // Refetch when refreshTrigger changes
   useEffect(() => {
-    loadStats()
-  }, [refreshTrigger, loadStats])
+    refetch()
+  }, [refreshTrigger, refetch])
 
   const requiredDocumentTypes: DocumentType[] = ['noc', 'medical_certificate', 'license_certification', 'alcohol_test', 'training_records']
   
@@ -505,19 +501,29 @@ function PilotDashboard({ user }: { user: UserWithRole }) {
       {/* Upload Section */}
       <div id="upload-section" className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Upload New Document</h3>
-        <DocumentUpload 
-          userId={user.id} 
-          onUploadSuccess={handleUploadSuccess}
-        />
+        <Suspense fallback={
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-gray-200 rounded-lg"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-10 bg-gray-200 rounded-lg"></div>
+          </div>
+        }>
+          <DocumentUpload 
+            userId={user.id} 
+            onUploadSuccess={handleUploadSuccess}
+          />
+        </Suspense>
       </div>
       
       {/* Documents List with Search */}
       <div id="documents-section">
-        <DocumentsListWithSearch 
-          userId={user.id}
-          userRole="pilot"
-          refreshTrigger={refreshTrigger}
-        />
+        <Suspense fallback={<DocumentListSkeleton />}>
+          <DocumentsListWithSearch 
+            userId={user.id}
+            userRole="pilot"
+            refreshTrigger={refreshTrigger}
+          />
+        </Suspense>
       </div>
     </div>
   )
@@ -534,20 +540,38 @@ function AdminDashboardWrapper({ user }: { user: UserWithRole }) {
   return (
     <div className="space-y-6">
       {/* Main Admin Dashboard */}
-      <AdminDashboard userId={user.id} />
+      <Suspense fallback={<DashboardStatsSkeleton />}>
+        <AdminDashboard userId={user.id} />
+      </Suspense>
       
       {/* Approval Queue */}
-      <ApprovalQueue onDocumentUpdate={handleDocumentUpdate} />
+      <Suspense fallback={<DashboardStatsSkeleton />}>
+        <ApprovalQueue onDocumentUpdate={handleDocumentUpdate} />
+      </Suspense>
       
       {/* Role Assignment */}
-      <RoleAssignment />
+      <Suspense fallback={
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </div>
+        </div>
+      }>
+        <RoleAssignment />
+      </Suspense>
       
       {/* All Documents List for Admin with Search */}
-      <DocumentsListWithSearch 
-        userId={user.id}
-        userRole="admin"
-        refreshTrigger={dashboardRefreshTrigger}
-      />
+      <Suspense fallback={<DocumentListSkeleton />}>
+        <DocumentsListWithSearch 
+          userId={user.id}
+          userRole="admin"
+          refreshTrigger={dashboardRefreshTrigger}
+        />
+      </Suspense>
     </div>
   )
 }

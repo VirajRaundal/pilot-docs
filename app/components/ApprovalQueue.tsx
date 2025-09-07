@@ -11,7 +11,7 @@ import {
   PhotoIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
-import { format } from 'date-fns'
+import { format } from 'date-fns/format'
 import { 
   fetchDocumentsByStatus,
   updateDocumentStatus,
