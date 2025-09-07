@@ -4,16 +4,7 @@ import ServiceWorkerInit from './components/ServiceWorkerInit'
 import OptimizedScripts from './components/OptimizedScripts'
 import './globals.css'
 
-// Conditional Speed Insights - only load in production on Vercel
-let SpeedInsights: React.ComponentType = () => null
-try {
-  if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    SpeedInsights = require('@vercel/speed-insights/next').SpeedInsights as React.ComponentType
-  }
-} catch {
-  // Speed Insights not available, use null component
-}
+// Speed Insights removed to prevent console errors
 
 export const metadata: Metadata = {
   title: 'Pilot Management',
@@ -47,6 +38,9 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//www.googletagmanager.com" />
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
         
+        {/* Permissions Policy */}
+        <meta httpEquiv="Permissions-Policy" content="browsing-topics=()" />
+        
         {/* Resource hints for critical assets */}
         
         {/* Critical CSS inline (if any) */}
@@ -62,7 +56,6 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <QueryClientProvider>
           {children}
-          <SpeedInsights />
           <ServiceWorkerInit />
           <OptimizedScripts />
         </QueryClientProvider>

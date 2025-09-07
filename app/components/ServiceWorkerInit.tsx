@@ -1,14 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { registerServiceWorker } from '../../lib/serviceWorker'
-
 export default function ServiceWorkerInit() {
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') {
-      registerServiceWorker()
-    }
-  }, [])
-
+  // Service worker disabled to prevent development errors
+  // Can be re-enabled for production if needed
   return null
 }

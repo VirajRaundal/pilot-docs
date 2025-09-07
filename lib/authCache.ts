@@ -11,6 +11,9 @@ interface CachedUser {
 }
 
 export function getCachedUserRole(userId: string): UserRole | null {
+  // Return null on server-side to prevent hydration mismatch
+  if (typeof window === 'undefined') return null
+  
   try {
     const cached = localStorage.getItem(CACHE_KEY)
     if (!cached) return null
@@ -36,6 +39,9 @@ export function getCachedUserRole(userId: string): UserRole | null {
 }
 
 export function setCachedUserRole(userId: string, role: UserRole): void {
+  // Don't cache on server-side
+  if (typeof window === 'undefined') return
+  
   try {
     const data: CachedUser = {
       userId,
@@ -49,6 +55,8 @@ export function setCachedUserRole(userId: string, role: UserRole): void {
 }
 
 export function clearUserCache(): void {
+  if (typeof window === 'undefined') return
+  
   try {
     localStorage.removeItem(CACHE_KEY)
   } catch (error) {
@@ -60,6 +68,9 @@ export function clearUserCache(): void {
 const SESSION_KEY = 'pilot_management_session'
 
 export function getCachedSession() {
+  // Return null on server-side to prevent hydration mismatch
+  if (typeof window === 'undefined') return null
+  
   try {
     const cached = sessionStorage.getItem(SESSION_KEY)
     return cached ? JSON.parse(cached) : null
@@ -69,6 +80,8 @@ export function getCachedSession() {
 }
 
 export function setCachedSession(session: unknown) {
+  if (typeof window === 'undefined') return
+  
   try {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
   } catch (error) {
@@ -77,6 +90,8 @@ export function setCachedSession(session: unknown) {
 }
 
 export function clearCachedSession() {
+  if (typeof window === 'undefined') return
+  
   try {
     sessionStorage.removeItem(SESSION_KEY)
   } catch (error) {
