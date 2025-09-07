@@ -120,8 +120,8 @@ export default function AdminDashboard({ userId: _userId }: AdminDashboardProps)
 
       const stats: PilotStats = {
         total: pilots?.length || 0,
-        active: pilots?.filter(p => p.status === 'active').length || 0,
-        inactive: pilots?.filter(p => p.status !== 'active').length || 0
+        active: pilots?.filter(p => p && 'status' in p && p.status === 'active').length || 0,
+        inactive: pilots?.filter(p => p && 'status' in p && p.status !== 'active').length || 0
       }
       
       setPilotStats(stats)

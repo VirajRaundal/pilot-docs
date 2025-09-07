@@ -62,7 +62,8 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
 
       // If user is a pilot, only show their documents
       if (userRole === 'pilot') {
-        query = query.eq('pilots.user_id', userId)
+        // Use type assertion to handle complex Supabase relationship filtering
+        query = (query as typeof query & { eq: (field: string, value: unknown) => typeof query }).eq('pilots.user_id', userId)
       }
 
       const { data, error } = await query
@@ -71,7 +72,7 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
         throw error
       }
 
-      setDocuments(data || [])
+      setDocuments((data as unknown as Document[]) || [])
     } catch (error) {
       console.error('Error loading documents:', error)
       toast.error('Failed to load documents')
@@ -110,9 +111,9 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
       }
 
       // Delete from database
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('documents')
-        .delete()
+        .delete() as any)
         .eq('id', documentId)
 
       if (error) {

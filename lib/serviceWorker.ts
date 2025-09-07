@@ -47,11 +47,13 @@ export function unregisterServiceWorker() {
 
 // Network status monitoring
 export function useNetworkStatus() {
-  if (typeof window === 'undefined') return { isOnline: true }
-
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    setIsOnline(navigator.onLine)
+    
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
 

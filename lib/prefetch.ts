@@ -6,7 +6,7 @@ import { getUserRole } from './roles'
 
 // Prefetch user data when they first land on the app
 export async function prefetchUserData(queryClient: QueryClient, userId: string, userRole: string) {
-  const prefetchPromises: Promise<any>[] = []
+  const prefetchPromises: Promise<unknown>[] = []
 
   // Always prefetch user role if not already cached
   const cachedRole = queryClient.getQueryData(['userRole', userId])
@@ -56,7 +56,7 @@ export async function prefetchUserData(queryClient: QueryClient, userId: string,
 
 // Prefetch critical routes and components
 export function prefetchCriticalRoutes() {
-  const prefetchPromises: Promise<any>[] = []
+  const prefetchPromises: Promise<unknown>[] = []
 
   // Prefetch critical route components
   if (typeof window !== 'undefined') {
@@ -218,7 +218,7 @@ export function shouldPrefetch(): boolean {
   if (typeof navigator === 'undefined') return true
 
   // Don't prefetch on slow connections
-  const connection = (navigator as any).connection
+  const connection = (navigator as unknown as { connection?: { effectiveType: string; saveData: boolean } }).connection
   if (connection) {
     const { effectiveType, saveData } = connection
     

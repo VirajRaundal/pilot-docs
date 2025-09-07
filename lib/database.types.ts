@@ -1,46 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './database.types'
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-// Enhanced Supabase client with performance optimizations
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  db: {
-    schema: 'public',
-  },
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'pilot-management-app',
-      'X-Client-Version': '1.0.0',
-    },
-    // Connection timeout optimizations
-    fetch: (url, options = {}) => {
-      return fetch(url, {
-        ...options,
-        // Shorter timeout for better UX
-        signal: AbortSignal.timeout(15000), 
-      })
-    }
-  },
-  // Realtime optimizations
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-    transport: 'websocket',
-    timeout: 20000,
-  },
-})
-
-// Type definitions for our database
-export type Database = {
+export interface Database {
   public: {
     Tables: {
       user_roles: {
@@ -151,6 +117,21 @@ export type Database = {
           updated_at?: string
         }
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      user_role: 'pilot' | 'admin' | 'inspector'
+      pilot_status: 'active' | 'inactive' | 'suspended'
+      document_type: 'noc' | 'medical_certificate' | 'alcohol_test' | 'license_certification' | 'training_records'
+      document_status: 'pending' | 'approved' | 'rejected' | 'expired'
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
