@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import QueryClientProvider from './components/QueryClientProvider'
+import ServiceWorkerInit from './components/ServiceWorkerInit'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function RootLayout({
         <QueryClientProvider>
           {children}
           <SpeedInsights />
+          <ServiceWorkerInit />
         </QueryClientProvider>
       </body>
     </html>

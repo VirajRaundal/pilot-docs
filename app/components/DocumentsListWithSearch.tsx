@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { 
   EyeIcon, 
   TrashIcon, 
@@ -22,6 +22,7 @@ import {
   DocumentStatus
 } from '../../lib/documents'
 import DocumentsSearchFilter from './DocumentsSearchFilter'
+import VirtualList, { useOptimalItemHeight } from './VirtualList'
 
 interface DocumentsListWithSearchProps {
   userId: string
@@ -38,6 +39,10 @@ export default function DocumentsListWithSearch({
   const [loading, setLoading] = useState(false)
   const [viewingDocument, setViewingDocument] = useState<string | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  
+  // Optimize item height based on container size
+  const itemHeight = useOptimalItemHeight(containerRef, 280)
 
   const handleDocumentsChange = useCallback((filteredDocuments: DocumentWithPilot[]) => {
     setDocuments(filteredDocuments)
@@ -167,6 +172,156 @@ export default function DocumentsListWithSearch({
     return expiryDate <= thirtyDaysFromNow && expiryDate > new Date()
   }
 
+  // Render individual document card
+  const renderDocumentCard = useCallback((document: DocumentWithPilot, index: number) => (
+    <div
+      key={document.id}
+      className={`mobile-card relative overflow-hidden m-2 ${
+        isExpired(document) ? 'border-red-200 bg-red-50' :
+        isExpiringSoon(document) ? 'border-orange-200 bg-orange-50' :
+        'border-gray-100 bg-white hover:shadow-lg'
+      }`}
+    >
+      {/* Document Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <div className="p-2 rounded-lg bg-blue-50 border border-blue-100">
+            <DocumentIcon className="h-5 w-5 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm sm:text-base font-semibold text-gray-900 truncate mb-1">
+              {document.title}
+            </h4>
+            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+              {formatDocumentType(document.document_type)}
+            </span>
+          </div>
+        </div>
+        
+        {/* Status Badge */}
+        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(document.status)}`}>
+          {getStatusIcon(document.status)}
+          <span className="ml-1 capitalize hidden sm:inline">{document.status}</span>
+        </div>
+      </div>
+
+      {/* Pilot Info (for admin/inspector) */}
+      {userRole !== 'pilot' && (
+        <div className="flex items-center space-x-2 mb-3 p-2 bg-gray-50 rounded-lg">
+          <UserIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {document.pilots.first_name} {document.pilots.last_name}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{document.pilots.email}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Document Metadata */}
+      <div className="space-y-2 mb-3">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center space-x-1">
+            <CalendarIcon className="h-3 w-3" />
+            <span>Uploaded {format(new Date(document.upload_date), 'MMM d')}</span>
+          </div>
+          {document.file_size && (
+            <span>{(document.file_size / 1024 / 1024).toFixed(1)} MB</span>
+          )}
+        </div>
+        
+        {document.expiry_date && (
+          <div className={`flex items-center space-x-1 text-xs ${
+            isExpired(document) ? 'text-red-600 font-medium' : 
+            isExpiringSoon(document) ? 'text-orange-600 font-medium' : 'text-gray-500'
+          }`}>
+            <CalendarIcon className="h-3 w-3" />
+            <span>
+              {isExpired(document) ? 'Expired' : 'Expires'} {format(new Date(document.expiry_date), 'MMM d, yyyy')}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Expiry Warning */}
+      {(isExpired(document) || isExpiringSoon(document)) && (
+        <div className={`p-2 rounded-lg text-xs mb-3 ${
+          isExpired(document) ? 'bg-red-100 text-red-700 border border-red-200' :
+          'bg-orange-100 text-orange-700 border border-orange-200'
+        }`}>
+          <div className="flex items-center space-x-1">
+            <ExclamationTriangleIcon className="h-3 w-3" />
+            <span className="font-medium">
+              {isExpired(document) ? 'Document expired' : 'Expires soon'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <button
+          onClick={() => handleViewDocument(document)}
+          disabled={viewingDocument === document.id}
+          className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg disabled:opacity-50 transition-colors duration-200 min-h-[44px] touch-manipulation"
+        >
+          {viewingDocument === document.id ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+          ) : (
+            <EyeIcon className="h-4 w-4" />
+          )}
+          <span>View</span>
+        </button>
+        
+        <div className="flex items-center space-x-1">
+          {/* Admin Status Controls */}
+          {userRole === 'admin' && document.status === 'pending' && (
+            <>
+              <button
+                onClick={() => handleStatusUpdate(document.id, 'approved')}
+                disabled={updatingStatus === document.id}
+                className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-md disabled:opacity-50 transition-colors duration-200 min-h-[44px] touch-manipulation"
+              >
+                {updatingStatus === document.id ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                ) : (
+                  <>
+                    <CheckCircleIcon className="h-3 w-3 mr-1" />
+                    <span className="hidden sm:inline">Approve</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => handleStatusUpdate(document.id, 'rejected')}
+                disabled={updatingStatus === document.id}
+                className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-md disabled:opacity-50 transition-colors duration-200 min-h-[44px] touch-manipulation"
+              >
+                {updatingStatus === document.id ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
+                ) : (
+                  <>
+                    <XCircleIcon className="h-3 w-3 mr-1" />
+                    <span className="hidden sm:inline">Reject</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
+          
+          {(userRole === 'pilot' || userRole === 'admin') && (
+            <button
+              onClick={() => handleDeleteDocument(document)}
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 min-h-[44px] min-w-[44px] touch-manipulation"
+              title="Delete Document"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  ), [userRole, viewingDocument, updatingStatus, handleViewDocument, handleStatusUpdate, handleDeleteDocument, getStatusIcon, getStatusColor, formatDocumentType, isExpired, isExpiringSoon])
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Search and Filter Component */}
@@ -190,165 +345,30 @@ export default function DocumentsListWithSearch({
         )}
       </div>
         
-      {/* Documents Grid */}
-      {documents.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100">
-          <DocumentIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg mb-2">No documents found</p>
-          <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {documents.map((document) => (
-            <div
-              key={document.id}
-              className={`mobile-card relative overflow-hidden ${
-                isExpired(document) ? 'border-red-200 bg-red-50' :
-                isExpiringSoon(document) ? 'border-orange-200 bg-orange-50' :
-                'border-gray-100 bg-white hover:shadow-lg'
-              }`}
-            >
-              {/* Document Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="p-2 rounded-lg bg-blue-50 border border-blue-100">
-                    <DocumentIcon className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm sm:text-base font-semibold text-gray-900 truncate mb-1">
-                      {document.title}
-                    </h4>
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                      {formatDocumentType(document.document_type)}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Status Badge */}
-                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(document.status)}`}>
-                  {getStatusIcon(document.status)}
-                  <span className="ml-1 capitalize hidden sm:inline">{document.status}</span>
-                </div>
-              </div>
-
-              {/* Pilot Info (for admin/inspector) */}
-              {userRole !== 'pilot' && (
-                <div className="flex items-center space-x-2 mb-3 p-2 bg-gray-50 rounded-lg">
-                  <UserIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {document.pilots.first_name} {document.pilots.last_name}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">{document.pilots.email}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Document Metadata */}
-              <div className="space-y-2 mb-3">
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    <span>Uploaded {format(new Date(document.upload_date), 'MMM d')}</span>
-                  </div>
-                  {document.file_size && (
-                    <span>{(document.file_size / 1024 / 1024).toFixed(1)} MB</span>
-                  )}
-                </div>
-                
-                {document.expiry_date && (
-                  <div className={`flex items-center space-x-1 text-xs ${
-                    isExpired(document) ? 'text-red-600 font-medium' : 
-                    isExpiringSoon(document) ? 'text-orange-600 font-medium' : 'text-gray-500'
-                  }`}>
-                    <CalendarIcon className="h-3 w-3" />
-                    <span>
-                      {isExpired(document) ? 'Expired' : 'Expires'} {format(new Date(document.expiry_date), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Expiry Warning */}
-              {(isExpired(document) || isExpiringSoon(document)) && (
-                <div className={`p-2 rounded-lg text-xs mb-3 ${
-                  isExpired(document) ? 'bg-red-100 text-red-700 border border-red-200' :
-                  'bg-orange-100 text-orange-700 border border-orange-200'
-                }`}>
-                  <div className="flex items-center space-x-1">
-                    <ExclamationTriangleIcon className="h-3 w-3" />
-                    <span className="font-medium">
-                      {isExpired(document) ? 'Document expired' : 'Expires soon'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <button
-                  onClick={() => handleViewDocument(document)}
-                  disabled={viewingDocument === document.id}
-                  className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg disabled:opacity-50 transition-colors duration-200 min-h-[44px] touch-manipulation"
-                >
-                  {viewingDocument === document.id ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                  <span>View</span>
-                </button>
-                
-                <div className="flex items-center space-x-1">
-                  {/* Admin Status Controls */}
-                  {userRole === 'admin' && document.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => handleStatusUpdate(document.id, 'approved')}
-                        disabled={updatingStatus === document.id}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-md disabled:opacity-50 transition-colors duration-200 min-h-[44px] touch-manipulation"
-                      >
-                        {updatingStatus === document.id ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
-                        ) : (
-                          <>
-                            <CheckCircleIcon className="h-3 w-3 mr-1" />
-                            <span className="hidden sm:inline">Approve</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleStatusUpdate(document.id, 'rejected')}
-                        disabled={updatingStatus === document.id}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-md disabled:opacity-50 transition-colors duration-200 min-h-[44px] touch-manipulation"
-                      >
-                        {updatingStatus === document.id ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent"></div>
-                        ) : (
-                          <>
-                            <XCircleIcon className="h-3 w-3 mr-1" />
-                            <span className="hidden sm:inline">Reject</span>
-                          </>
-                        )}
-                      </button>
-                    </>
-                  )}
-                  
-                  {(userRole === 'pilot' || userRole === 'admin') && (
-                    <button
-                      onClick={() => handleDeleteDocument(document)}
-                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200 min-h-[44px] min-w-[44px] touch-manipulation"
-                      title="Delete Document"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            ))}
+      {/* Documents Display */}
+      <div ref={containerRef} className="min-h-[400px]">
+        {documents.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100">
+            <DocumentIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg mb-2">No documents found</p>
+            <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
+          </div>
+        ) : documents.length > 50 ? (
+          // Use virtual scrolling for large lists (>50 documents)
+          <VirtualList
+            items={documents}
+            itemHeight={itemHeight}
+            containerHeight={600}
+            renderItem={renderDocumentCard}
+            className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100"
+          />
+        ) : (
+          // Use regular grid for smaller lists
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {documents.map((document, index) => renderDocumentCard(document, index))}
           </div>
         )}
+      </div>
 
       {/* Results Summary */}
       {documents.length > 0 && (

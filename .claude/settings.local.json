@@ -4,7 +4,9 @@
       "Read(//var/folders/rq/14r_kf1x4hl84jjq9r2xp0lh0000gn/T/TemporaryItems/NSIRD_screencaptureui_g6VQhy/**)",
       "Bash(npx next build:*)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm run analyze:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

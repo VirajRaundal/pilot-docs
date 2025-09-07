@@ -429,7 +429,150 @@ export async function getExpiringDocuments(
 }
 
 /**
- * Get document statistics for a user
+ * Get user dashboard data (combined stats and documents)
+ */
+export async function getUserDashboardData(userId: string): Promise<{
+  stats: {
+    total: number
+    pending: number
+    approved: number
+    rejected: number
+    expired: number
+    expiringSoon: number
+  }
+  documents: DocumentWithPilot[]
+  expiringDocuments: DocumentWithPilot[]
+}> {
+  try {
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 30)
+    
+    const { data, error } = await supabase
+      .from('documents')
+      .select(`
+        *,
+        pilots!inner (
+          id,
+          user_id,
+          first_name,
+          last_name,
+          email,
+          pilot_license
+        )
+      `)
+      .eq('pilots.user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw new Error('Error fetching user dashboard data: ' + error.message)
+    }
+
+    const documents = data || []
+    const stats = {
+      total: documents.length,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      expired: 0,
+      expiringSoon: 0
+    }
+
+    const expiringDocuments: DocumentWithPilot[] = []
+    const now = new Date()
+
+    // Calculate stats and filter expiring docs in a single pass
+    for (const doc of documents) {
+      // Status counts
+      if (doc.status === 'pending') stats.pending++
+      else if (doc.status === 'approved') stats.approved++
+      else if (doc.status === 'rejected') stats.rejected++
+
+      // Expiry calculations
+      if (doc.expiry_date) {
+        const expiryDate = new Date(doc.expiry_date)
+        
+        if (expiryDate < now) {
+          stats.expired++
+        } else if (expiryDate <= futureDate) {
+          stats.expiringSoon++
+          expiringDocuments.push(doc)
+        }
+      }
+    }
+
+    // Sort expiring documents by expiry date
+    expiringDocuments.sort((a, b) => 
+      new Date(a.expiry_date!).getTime() - new Date(b.expiry_date!).getTime()
+    )
+
+    return {
+      stats,
+      documents,
+      expiringDocuments
+    }
+  } catch (error) {
+    console.error('Error in getUserDashboardData:', error)
+    throw error
+  }
+}
+
+/**
+ * Get admin overview data (combined stats and recent documents)
+ */
+export async function getAdminOverview(): Promise<{
+  totalUsers: number
+  totalDocuments: number
+  pendingApprovals: number
+  recentDocuments: DocumentWithPilot[]
+}> {
+  try {
+    // Get all necessary data with parallel queries
+    const [documentsQuery, pilotsQuery] = await Promise.all([
+      supabase
+        .from('documents')
+        .select(`
+          *,
+          pilots!inner (
+            id,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            pilot_license
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50),
+      supabase
+        .from('pilots')
+        .select('id', { count: 'exact', head: true })
+    ])
+
+    if (documentsQuery.error) {
+      throw new Error('Error fetching documents: ' + documentsQuery.error.message)
+    }
+
+    if (pilotsQuery.error) {
+      throw new Error('Error fetching pilots: ' + pilotsQuery.error.message)
+    }
+
+    const documents = documentsQuery.data || []
+    const pendingCount = documents.filter(d => d.status === 'pending').length
+
+    return {
+      totalUsers: pilotsQuery.count || 0,
+      totalDocuments: documents.length,
+      pendingApprovals: pendingCount,
+      recentDocuments: documents.slice(0, 10)
+    }
+  } catch (error) {
+    console.error('Error in getAdminOverview:', error)
+    throw error
+  }
+}
+
+/**
+ * Get document statistics for a user (optimized with single query)
  */
 export async function getDocumentStats(userId: string): Promise<{
   total: number
@@ -440,16 +583,51 @@ export async function getDocumentStats(userId: string): Promise<{
   expiringSoon: number
 }> {
   try {
-    const documents = await fetchUserDocuments(userId)
-    const expiringDocs = await getExpiringDocuments(userId, 30)
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 30)
+    const now = new Date().toISOString()
 
+    const { data, error } = await supabase
+      .from('documents')
+      .select(`
+        status,
+        expiry_date,
+        pilots!inner (user_id)
+      `)
+      .eq('pilots.user_id', userId)
+
+    if (error) {
+      throw new Error('Error fetching document stats: ' + error.message)
+    }
+
+    const documents = data || []
     const stats = {
       total: documents.length,
-      pending: documents.filter(d => d.status === 'pending').length,
-      approved: documents.filter(d => d.status === 'approved').length,
-      rejected: documents.filter(d => d.status === 'rejected').length,
-      expired: documents.filter(d => isDocumentExpired(d)).length,
-      expiringSoon: expiringDocs.length
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      expired: 0,
+      expiringSoon: 0
+    }
+
+    // Calculate stats in a single pass
+    for (const doc of documents) {
+      // Status counts
+      if (doc.status === 'pending') stats.pending++
+      else if (doc.status === 'approved') stats.approved++
+      else if (doc.status === 'rejected') stats.rejected++
+
+      // Expiry calculations
+      if (doc.expiry_date) {
+        const expiryDate = new Date(doc.expiry_date)
+        const nowDate = new Date()
+        
+        if (expiryDate < nowDate) {
+          stats.expired++
+        } else if (expiryDate <= new Date(futureDate)) {
+          stats.expiringSoon++
+        }
+      }
     }
 
     return stats

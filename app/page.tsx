@@ -6,16 +6,46 @@ import { User } from '@supabase/supabase-js'
 import AuthForm from './components/AuthForm'
 import Dashboard from './components/Dashboard'
 import { getUserRole, assignUserRole, UserWithRole } from '../lib/roles'
+import { getCachedUserRole, setCachedUserRole, getCachedSession, setCachedSession, clearUserCache, clearCachedSession } from '../lib/authCache'
+import { prefetchUserData, prefetchCriticalRoutes, preloadCriticalAssets, shouldPrefetch } from '../lib/prefetch'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function Home() {
   const [user, setUser] = useState<UserWithRole | null>(null)
   const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   useEffect(() => {
+    // Preload critical assets on app load
+    preloadCriticalAssets()
+    
+    // Prefetch critical routes if network conditions are good
+    if (shouldPrefetch()) {
+      prefetchCriticalRoutes()
+    }
+
     // Get initial session
     const getSession = async () => {
+      // First check cached session
+      const cachedSession = getCachedSession()
+      if (cachedSession?.user) {
+        const cachedRole = getCachedUserRole(cachedSession.user.id)
+        if (cachedRole) {
+          // Use cached data immediately for faster loading
+          const userWithRole: UserWithRole = {
+            ...cachedSession.user,
+            role: cachedRole
+          }
+          setUser(userWithRole)
+          setLoading(false)
+          return
+        }
+      }
+
+      // Fall back to Supabase session
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
+        setCachedSession(session)
         await loadUserWithRole(session.user)
       } else {
         setLoading(false)
@@ -27,7 +57,13 @@ export default function Home() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          clearUserCache()
+          clearCachedSession()
+        }
+        
         if (session?.user) {
+          setCachedSession(session)
           await loadUserWithRole(session.user)
         } else {
           setUser(null)
@@ -41,14 +77,24 @@ export default function Home() {
 
   const loadUserWithRole = async (authUser: User) => {
     try {
-      // Get user's role
-      let role = await getUserRole(authUser.id)
+      // First check cache for role
+      let role = getCachedUserRole(authUser.id)
       
-      // If user doesn't have a role yet, assign them as 'pilot' by default
+      // If not in cache, fetch from database
       if (!role) {
-        const assigned = await assignUserRole(authUser.id, 'pilot')
-        if (assigned) {
-          role = 'pilot'
+        role = await getUserRole(authUser.id)
+        
+        // If user doesn't have a role yet, assign them as 'pilot' by default
+        if (!role) {
+          const assigned = await assignUserRole(authUser.id, 'pilot')
+          if (assigned) {
+            role = 'pilot'
+          }
+        }
+        
+        // Cache the role if we got one
+        if (role) {
+          setCachedUserRole(authUser.id, role)
         }
       }
 
@@ -59,6 +105,12 @@ export default function Home() {
       }
 
       setUser(userWithRole)
+      
+      // Prefetch user-specific data after successful authentication
+      if (role && shouldPrefetch()) {
+        prefetchUserData(queryClient, authUser.id, role)
+          .catch(console.error)
+      }
     } catch (error) {
       console.error('Error loading user role:', error)
       setUser({ ...authUser, role: undefined })
