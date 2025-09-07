@@ -58,7 +58,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
     }
 
     if (existingPilot) {
-      return existingPilot.id
+      return (existingPilot as { id: string }).id
     }
 
     // Get user info from auth
@@ -66,7 +66,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
     if (userError) throw userError
 
     // Create pilot record if it doesn't exist
-    const { data: newPilot, error: createPilotError } = await supabase
+    const { data: newPilot, error: createPilotError } = await (supabase
       .from('pilots')
       .insert({
         user_id: userId,
@@ -75,9 +75,9 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
         last_name: user?.user_metadata?.last_name || 'Pilot',
         email: user?.email || 'user@example.com',
         status: 'active' as const
-      })
+      } as any)
       .select('id')
-      .single()
+      .single() as unknown as Promise<{ data: { id: string } | null; error: Error | null }>)
 
     if (createPilotError) {
       throw new Error('Error creating pilot record: ' + createPilotError.message)

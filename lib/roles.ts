@@ -86,3 +86,24 @@ export function isInspector(user: UserWithRole): boolean {
 export function isPilot(user: UserWithRole): boolean {
   return user.role === 'pilot'
 }
+
+// Update existing user role
+export async function updateUserRole(userId: string, role: UserRole): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('user_roles')
+      .update({ role })
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error updating user role:', error)
+      return false
+    }
+
+    console.log('Role updated successfully')
+    return true
+  } catch (error) {
+    console.error('Error in updateUserRole:', error)
+    return false
+  }
+}

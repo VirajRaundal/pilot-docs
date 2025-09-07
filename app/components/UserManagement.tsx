@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { updateUserRole, assignUserRole } from '../../lib/roles'
 import { UserIcon, PencilIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -61,21 +62,21 @@ export default function UserManagement() {
           // Get current user info if it's the current user
           const { data: { user: currentUser } } = await supabase.auth.getUser()
           
-          if (currentUser && currentUser.id === userRole.user_id) {
+          if (currentUser && currentUser.id === (userRole as { user_id: string; role: string }).user_id) {
             usersWithRoles.push({
               id: currentUser.id,
               email: currentUser.email || '',
               created_at: currentUser.created_at,
               user_metadata: currentUser.user_metadata,
-              role: userRole.role
+              role: (userRole as { role: 'pilot' | 'admin' | 'inspector' }).role
             })
           } else {
             // For other users, we'll show minimal info
             usersWithRoles.push({
-              id: userRole.user_id,
-              email: `User ${userRole.user_id.substring(0, 8)}...`,
-              created_at: userRole.created_at,
-              role: userRole.role
+              id: (userRole as { user_id: string }).user_id,
+              email: `User ${(userRole as { user_id: string }).user_id.substring(0, 8)}...`,
+              created_at: (userRole as { created_at: string }).created_at,
+              role: (userRole as { role: 'pilot' | 'admin' | 'inspector' }).role
             })
           }
         }
@@ -107,19 +108,16 @@ export default function UserManagement() {
 
       if (existingRole) {
         // Update existing role
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role })
-          .eq('user_id', userId)
-
-        if (error) throw error
+        const success = await updateUserRole(userId, role as 'pilot' | 'admin' | 'inspector')
+        if (!success) {
+          throw new Error('Failed to update user role')
+        }
       } else {
         // Insert new role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role })
-
-        if (error) throw error
+        const success = await assignUserRole(userId, role as 'pilot' | 'admin' | 'inspector')
+        if (!success) {
+          throw new Error('Failed to assign user role')
+        }
       }
 
       toast.success(`Role assigned successfully`)

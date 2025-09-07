@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { assignUserRole, updateUserRole, getUserRole, UserRole } from '../../lib/roles'
 import { UserPlusIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 
@@ -22,32 +23,21 @@ export default function RoleAssignment() {
       setLoading(true)
       
       // Check if user already has a role
-      const { data: existingRole, error: checkError } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', userId.trim())
-        .maybeSingle()
-
-      if (checkError) {
-        throw checkError
-      }
+      const existingRole = await getUserRole(userId.trim())
 
       if (existingRole) {
         // Update existing role
-        const { error } = await (supabase
-          .from('user_roles')
-          .update({ role } as { role: 'pilot' | 'admin' | 'inspector' })
-          .eq('user_id', userId.trim()) as Promise<{ error: Error | null }>)
-
-        if (error) throw error
+        const success = await updateUserRole(userId.trim(), role as UserRole)
+        if (!success) {
+          throw new Error('Failed to update user role')
+        }
         toast.success(`Role updated to ${role}`)
       } else {
         // Insert new role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId.trim(), role })
-
-        if (error) throw error
+        const success = await assignUserRole(userId.trim(), role as UserRole)
+        if (!success) {
+          throw new Error('Failed to assign user role')
+        }
         toast.success(`Role assigned: ${role}`)
       }
 
