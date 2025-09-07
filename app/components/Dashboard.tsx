@@ -27,6 +27,7 @@ const DocumentsListWithSearch = lazy(() => import('./DocumentsListWithSearch'))
 const RoleAssignment = lazy(() => import('./RoleAssignment'))
 const AdminDashboard = lazy(() => import('./AdminDashboard'))
 const ApprovalQueue = lazy(() => import('./ApprovalQueue'))
+const AuditLog = lazy(() => import('./AuditLog'))
 
 // Define types locally to avoid import issues
 interface UserWithRole {
@@ -563,6 +564,22 @@ function AdminDashboardWrapper({ user }: { user: UserWithRole }) {
       }>
         <RoleAssignment />
       </Suspense>
+
+      {/* Audit Log */}
+      <Suspense fallback={
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      }>
+        <AuditLog user={user as any} /> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+      </Suspense>
       
       {/* All Documents List for Admin with Search */}
       <Suspense fallback={<DocumentListSkeleton />}>
@@ -588,6 +605,22 @@ function InspectorDashboard({ user }: { user: UserWithRole }) {
           Review pilot documents, conduct compliance checks, and generate inspection reports.
         </p>
       </div>
+
+      {/* Audit Log for Inspector */}
+      <Suspense fallback={
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      }>
+        <AuditLog user={user as any} /> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+      </Suspense>
       
       {/* All Documents List for Inspector (Read-only) with Search */}
       <DocumentsListWithSearch 

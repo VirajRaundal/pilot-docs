@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { uploadPilotDocument, getDocumentUrl, deleteDocument } from './storage'
+import { auditHelpers } from './audit'
 
 // Document types
 export type DocumentType = 'noc' | 'medical_certificate' | 'alcohol_test' | 'license_certification' | 'training_records'
@@ -170,6 +171,14 @@ export async function uploadDocumentComplete(
     const urlResult = await getDocumentUrl(uploadResult.fullPath!)
     const fileUrl = urlResult.success ? urlResult.url! : ''
 
+    // 5. Log the upload action
+    try {
+      await auditHelpers.logDocumentUpload(document.id, document.title)
+    } catch (auditError) {
+      // Don't fail the main operation if audit logging fails
+      console.warn('Failed to log document upload:', auditError)
+    }
+
     return {
       document,
       fileUrl
@@ -280,9 +289,24 @@ export async function fetchDocumentsByStatus(status: DocumentStatus): Promise<Do
  */
 export async function updateDocumentStatus(
   documentId: string,
-  status: DocumentStatus
+  status: DocumentStatus,
+  reason?: string
 ): Promise<Document> {
   try {
+    // Get current document for audit logging
+    const { data: currentDoc, error: fetchError } = await supabase
+      .from('documents')
+      .select('status, title')
+      .eq('id', documentId)
+      .single()
+
+    if (fetchError) {
+      throw new Error('Error fetching current document: ' + fetchError.message)
+    }
+
+    const previousStatus = currentDoc.status
+    const documentTitle = currentDoc.title
+
     const { data, error } = await ((supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .from('documents')
       .update({
@@ -295,6 +319,18 @@ export async function updateDocumentStatus(
 
     if (error) {
       throw new Error('Error updating document status: ' + error.message)
+    }
+
+    // Log the appropriate audit action
+    try {
+      if (status === 'approved') {
+        await auditHelpers.logDocumentApproval(documentId, documentTitle, previousStatus)
+      } else if (status === 'rejected') {
+        await auditHelpers.logDocumentRejection(documentId, documentTitle, reason)
+      }
+    } catch (auditError) {
+      // Don't fail the main operation if audit logging fails
+      console.warn('Failed to log audit action:', auditError)
     }
 
     return data as Document
@@ -368,6 +404,14 @@ export async function getDocumentWithUrl(documentId: string): Promise<{
 
     if (!urlResult.url) {
       throw new Error('Document URL is empty')
+    }
+
+    // Log the document view action
+    try {
+      await auditHelpers.logDocumentView(documentId, (document as DocumentWithPilot).title)
+    } catch (auditError) {
+      // Don't fail the main operation if audit logging fails
+      console.warn('Failed to log document view:', auditError)
     }
 
     return {
