@@ -198,7 +198,7 @@ export async function fetchUserDocuments(userId: string): Promise<DocumentWithPi
           pilot_license
         )
       `)
-      .eq('pilots.user_id', userId)
+      .eq('pilots.user_id', userId as string)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -411,7 +411,7 @@ export async function getExpiringDocuments(
           pilot_license
         )
       `)
-      .eq('pilots.user_id', userId)
+      .eq('pilots.user_id', userId as string)
       .not('expiry_date', 'is', null)
       .lte('expiry_date', futureDate.toISOString())
       .gte('expiry_date', new Date().toISOString())
@@ -460,7 +460,7 @@ export async function getUserDashboardData(userId: string): Promise<{
           pilot_license
         )
       `)
-      .eq('pilots.user_id', userId)
+      .eq('pilots.user_id', userId as string)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -585,7 +585,6 @@ export async function getDocumentStats(userId: string): Promise<{
   try {
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 30)
-    const now = new Date().toISOString()
 
     const { data, error } = await supabase
       .from('documents')
@@ -594,7 +593,7 @@ export async function getDocumentStats(userId: string): Promise<{
         expiry_date,
         pilots!inner (user_id)
       `)
-      .eq('pilots.user_id', userId)
+      .eq('pilots.user_id', userId as string)
 
     if (error) {
       throw new Error('Error fetching document stats: ' + error.message)

@@ -42,7 +42,7 @@ export default function DocumentsListWithSearch({
   const containerRef = useRef<HTMLDivElement>(null)
   
   // Optimize item height based on container size
-  const itemHeight = useOptimalItemHeight(containerRef, 280)
+  const itemHeight = useOptimalItemHeight(containerRef as React.RefObject<HTMLElement>, 280)
 
   const handleDocumentsChange = useCallback((filteredDocuments: DocumentWithPilot[]) => {
     setDocuments(filteredDocuments)

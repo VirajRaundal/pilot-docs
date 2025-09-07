@@ -82,19 +82,19 @@ export default function DocumentUpload({ userId, onUploadSuccess }: DocumentUplo
       let pilotId = userId;
       
       // Check if pilot record exists
-      const { data: existingPilot, error: pilotCheckError } = await supabase
+      const { data: existingPilot, error: pilotCheckError } = await (supabase
         .from('pilots')
-        .select('id')
+        .select('id') as unknown as { eq: (field: string, value: unknown) => { maybeSingle: () => Promise<{ data: unknown; error: unknown }> } })
         .eq('user_id', userId)
         .maybeSingle()
 
-      if (pilotCheckError && pilotCheckError.code !== 'PGRST116') {
-        throw new Error('Error checking pilot record: ' + pilotCheckError.message)
+      if (pilotCheckError && (pilotCheckError as { code?: string; message?: string }).code !== 'PGRST116') {
+        throw new Error('Error checking pilot record: ' + (pilotCheckError as { message?: string }).message)
       }
 
       if (!existingPilot) {
         // Create pilot record if it doesn't exist
-        const { data: newPilot, error: createPilotError } = await supabase
+        const { data: newPilot, error: createPilotError } = await (supabase
           .from('pilots')
           .insert({
             user_id: userId,
@@ -103,7 +103,7 @@ export default function DocumentUpload({ userId, onUploadSuccess }: DocumentUplo
             last_name: 'Pilot',
             email: 'user@example.com', // Will be updated later
             status: 'active'
-          })
+          }) as any) // Type assertion needed for Supabase insert operation compatibility
           .select('id')
           .single()
 

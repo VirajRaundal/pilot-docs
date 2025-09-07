@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { getDocumentUrl, deleteDocument } from '../../lib/storage'
 import { 
@@ -38,11 +38,7 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
   const [loading, setLoading] = useState(true)
   const [viewingDocument, setViewingDocument] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadDocuments()
-  }, [userId, refreshTrigger])
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -79,7 +75,18 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId, userRole])
+
+  useEffect(() => {
+    loadDocuments()
+  }, [loadDocuments])
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger) {
+      loadDocuments()
+    }
+  }, [refreshTrigger, loadDocuments])
 
   const handleViewDocument = async (fileUrl: string) => {
     try {
@@ -91,7 +98,7 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
       } else {
         toast.error('Failed to load document')
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to open document')
     } finally {
       setViewingDocument(null)
@@ -113,7 +120,7 @@ export default function DocumentsList({ userId, userRole, refreshTrigger }: Docu
       // Delete from database
       const { error } = await (supabase
         .from('documents')
-        .delete() as any)
+        .delete() as unknown as { eq: (field: string, value: unknown) => Promise<{ error: unknown }> })
         .eq('id', documentId)
 
       if (error) {
