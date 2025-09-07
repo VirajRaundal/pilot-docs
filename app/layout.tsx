@@ -10,18 +10,13 @@ export const metadata: Metadata = {
   description: 'Pilot Document Management System',
   keywords: 'pilot, aviation, document management, compliance',
   authors: [{ name: 'Pilot Management Team' }],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
   robots: {
     index: true,
     follow: true,
   },
   icons: {
     icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
   },
 }
 
@@ -42,7 +37,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
         
         {/* Resource hints for critical assets */}
-        <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossOrigin="" />
         
         {/* Critical CSS inline (if any) */}
         <style dangerouslySetInnerHTML={{

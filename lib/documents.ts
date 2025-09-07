@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { uploadPilotDocument, getDocumentUrl, deleteDocument } from './storage'
+import type { Database } from './database.types'
 
 // Document types
 export type DocumentType = 'noc' | 'medical_certificate' | 'alcohol_test' | 'license_certification' | 'training_records'
@@ -58,7 +59,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
     }
 
     if (existingPilot) {
-      return existingPilot.id
+      return (existingPilot as any).id
     }
 
     // Get user info from auth
@@ -66,7 +67,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
     if (userError) throw userError
 
     // Create pilot record if it doesn't exist
-    const { data: newPilot, error: createPilotError } = await supabase
+    const { data: newPilot, error: createPilotError } = await (supabase as any)
       .from('pilots')
       .insert({
         user_id: userId,
@@ -74,7 +75,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
         first_name: user?.user_metadata?.first_name || 'User',
         last_name: user?.user_metadata?.last_name || 'Pilot',
         email: user?.email || 'user@example.com',
-        status: 'active'
+        status: 'active' as const
       })
       .select('id')
       .single()
@@ -83,7 +84,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
       throw new Error('Error creating pilot record: ' + createPilotError.message)
     }
 
-    return newPilot.id
+    return (newPilot as any).id
   } catch (error) {
     console.error('Error in getOrCreatePilotRecord:', error)
     throw error
@@ -106,7 +107,7 @@ export async function saveDocumentMetadata(
   }
 ): Promise<Document> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('documents')
       .insert({
         pilot_id: pilotId,
@@ -126,7 +127,7 @@ export async function saveDocumentMetadata(
       throw new Error('Error saving document metadata: ' + error.message)
     }
 
-    return data
+    return data as Document
   } catch (error) {
     console.error('Error in saveDocumentMetadata:', error)
     throw error
@@ -198,14 +199,14 @@ export async function fetchUserDocuments(userId: string): Promise<DocumentWithPi
           pilot_license
         )
       `)
-      .eq('pilots.user_id', userId as string)
+      .eq('pilots.user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
       throw new Error('Error fetching documents: ' + error.message)
     }
 
-    return data || []
+    return (data as DocumentWithPilot[]) || []
   } catch (error) {
     console.error('Error in fetchUserDocuments:', error)
     throw error
@@ -236,7 +237,7 @@ export async function fetchAllDocuments(): Promise<DocumentWithPilot[]> {
       throw new Error('Error fetching all documents: ' + error.message)
     }
 
-    return data || []
+    return (data as DocumentWithPilot[]) || []
   } catch (error) {
     console.error('Error in fetchAllDocuments:', error)
     throw error
@@ -268,7 +269,7 @@ export async function fetchDocumentsByStatus(status: DocumentStatus): Promise<Do
       throw new Error('Error fetching documents by status: ' + error.message)
     }
 
-    return data || []
+    return (data as DocumentWithPilot[]) || []
   } catch (error) {
     console.error('Error in fetchDocumentsByStatus:', error)
     throw error
@@ -283,7 +284,7 @@ export async function updateDocumentStatus(
   status: DocumentStatus
 ): Promise<Document> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('documents')
       .update({
         status,
@@ -297,7 +298,7 @@ export async function updateDocumentStatus(
       throw new Error('Error updating document status: ' + error.message)
     }
 
-    return data
+    return data as Document
   } catch (error) {
     console.error('Error in updateDocumentStatus:', error)
     throw error
@@ -360,7 +361,8 @@ export async function getDocumentWithUrl(documentId: string): Promise<{
     }
 
     // Get signed URL
-    const urlResult = await getDocumentUrl(document.file_url)
+    const typedDoc = document as any
+    const urlResult = await getDocumentUrl(typedDoc.file_url)
     if (!urlResult.success) {
       throw new Error(`Error getting document URL: ${urlResult.error || 'Unknown error'}`)
     }
@@ -370,7 +372,7 @@ export async function getDocumentWithUrl(documentId: string): Promise<{
     }
 
     return {
-      document,
+      document: document as DocumentWithPilot,
       viewUrl: urlResult.url
     }
   } catch (error) {
@@ -411,7 +413,7 @@ export async function getExpiringDocuments(
           pilot_license
         )
       `)
-      .eq('pilots.user_id', userId as string)
+      .eq('pilots.user_id', userId)
       .not('expiry_date', 'is', null)
       .lte('expiry_date', futureDate.toISOString())
       .gte('expiry_date', new Date().toISOString())
@@ -421,7 +423,7 @@ export async function getExpiringDocuments(
       throw new Error('Error fetching expiring documents: ' + error.message)
     }
 
-    return data || []
+    return (data as DocumentWithPilot[]) || []
   } catch (error) {
     console.error('Error in getExpiringDocuments:', error)
     throw error
@@ -460,7 +462,7 @@ export async function getUserDashboardData(userId: string): Promise<{
           pilot_license
         )
       `)
-      .eq('pilots.user_id', userId as string)
+      .eq('pilots.user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -482,20 +484,21 @@ export async function getUserDashboardData(userId: string): Promise<{
 
     // Calculate stats and filter expiring docs in a single pass
     for (const doc of documents) {
+      const typedDoc = doc as any
       // Status counts
-      if (doc.status === 'pending') stats.pending++
-      else if (doc.status === 'approved') stats.approved++
-      else if (doc.status === 'rejected') stats.rejected++
+      if (typedDoc.status === 'pending') stats.pending++
+      else if (typedDoc.status === 'approved') stats.approved++
+      else if (typedDoc.status === 'rejected') stats.rejected++
 
       // Expiry calculations
-      if (doc.expiry_date) {
-        const expiryDate = new Date(doc.expiry_date)
+      if (typedDoc.expiry_date) {
+        const expiryDate = new Date(typedDoc.expiry_date)
         
         if (expiryDate < now) {
           stats.expired++
         } else if (expiryDate <= futureDate) {
           stats.expiringSoon++
-          expiringDocuments.push(doc)
+          expiringDocuments.push(typedDoc)
         }
       }
     }
@@ -557,7 +560,7 @@ export async function getAdminOverview(): Promise<{
     }
 
     const documents = documentsQuery.data || []
-    const pendingCount = documents.filter(d => d.status === 'pending').length
+    const pendingCount = documents.filter(d => (d as any).status === 'pending').length
 
     return {
       totalUsers: pilotsQuery.count || 0,
@@ -593,7 +596,7 @@ export async function getDocumentStats(userId: string): Promise<{
         expiry_date,
         pilots!inner (user_id)
       `)
-      .eq('pilots.user_id', userId as string)
+      .eq('pilots.user_id', userId)
 
     if (error) {
       throw new Error('Error fetching document stats: ' + error.message)
@@ -611,14 +614,17 @@ export async function getDocumentStats(userId: string): Promise<{
 
     // Calculate stats in a single pass
     for (const doc of documents) {
+      // Type assertion to ensure we have the right type
+      const typedDoc = doc as { status: string; expiry_date: string | null }
+      
       // Status counts
-      if (doc.status === 'pending') stats.pending++
-      else if (doc.status === 'approved') stats.approved++
-      else if (doc.status === 'rejected') stats.rejected++
+      if (typedDoc.status === 'pending') stats.pending++
+      else if (typedDoc.status === 'approved') stats.approved++
+      else if (typedDoc.status === 'rejected') stats.rejected++
 
       // Expiry calculations
-      if (doc.expiry_date) {
-        const expiryDate = new Date(doc.expiry_date)
+      if (typedDoc.expiry_date) {
+        const expiryDate = new Date(typedDoc.expiry_date)
         const nowDate = new Date()
         
         if (expiryDate < nowDate) {

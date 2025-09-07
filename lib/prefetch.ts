@@ -203,8 +203,7 @@ export function preloadCriticalAssets() {
   if (typeof window === 'undefined') return
 
   const criticalImages = [
-    '/icon-192x192.png',
-    '/badge-72x72.png',
+    '/favicon.ico',
   ]
 
   criticalImages.forEach(src => {

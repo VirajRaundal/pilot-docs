@@ -145,19 +145,17 @@ self.addEventListener('push', (event) => {
   const data = event.data.json()
   const options = {
     body: data.body,
-    icon: '/icon-192x192.png',
-    badge: '/badge-72x72.png',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
     data: data.url,
     actions: [
       {
         action: 'view',
-        title: 'View',
-        icon: '/view-icon.png'
+        title: 'View'
       },
       {
         action: 'dismiss',
-        title: 'Dismiss',
-        icon: '/dismiss-icon.png'
+        title: 'Dismiss'
       }
     ]
   }

@@ -8,7 +8,9 @@
       "Bash(npm run analyze:*)",
       "Bash(npm uninstall:*)",
       "Bash(git add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
