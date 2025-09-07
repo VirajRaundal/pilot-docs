@@ -1,5 +1,7 @@
 'use client'
 
+// Does this work??
+
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { User } from '@supabase/supabase-js'
