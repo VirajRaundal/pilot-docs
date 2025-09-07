@@ -304,8 +304,8 @@ export async function updateDocumentStatus(
       throw new Error('Error fetching current document: ' + fetchError.message)
     }
 
-    const previousStatus = currentDoc.status
-    const documentTitle = currentDoc.title
+    const previousStatus = (currentDoc as { status: string; title: string }).status
+    const documentTitle = (currentDoc as { status: string; title: string }).title
 
     const { data, error } = await ((supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .from('documents')
