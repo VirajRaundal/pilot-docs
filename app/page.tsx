@@ -9,15 +9,13 @@ import AuthForm from './components/AuthForm'
 import Dashboard from './components/Dashboard'
 import { getUserRole, assignUserRole, UserWithRole } from '../lib/roles'
 import { getCachedUserRole, setCachedUserRole, getCachedSession, setCachedSession, clearUserCache, clearCachedSession } from '../lib/authCache'
-import { prefetchUserData, prefetchCriticalRoutes, preloadCriticalAssets, shouldPrefetch } from '../lib/prefetch'
-import { useQueryClient } from '@tanstack/react-query'
+import { prefetchCriticalRoutes, preloadCriticalAssets, shouldPrefetch } from '../lib/prefetch'
 
 export default function Home() {
   const [user, setUser] = useState<UserWithRole | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
-  const queryClient = useQueryClient()
 
   useEffect(() => {
     setMounted(true)
@@ -104,6 +102,7 @@ export default function Home() {
     }
   }, [loading])
 
+
   // Prevent hydration mismatch by not rendering anything until mounted
   if (!mounted) {
     return (
@@ -146,12 +145,6 @@ export default function Home() {
       }
 
       setUser(userWithRole)
-      
-      // Prefetch user-specific data after successful authentication
-      if (role && shouldPrefetch()) {
-        prefetchUserData(queryClient, authUser.id, role)
-          .catch(() => {}) // Silent fail for prefetch
-      }
     } catch (error) {
       setError(`Failed to load user role: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setUser({ ...authUser, role: undefined })
