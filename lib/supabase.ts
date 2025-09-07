@@ -22,15 +22,31 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       'X-Client-Info': 'pilot-management-app',
       'X-Client-Version': '1.0.0',
     },
-    // Connection timeout optimizations
-    fetch: (url, options = {}) => {
+    // Enhanced fetch with better error handling
+    fetch: async (url, options = {}) => {
       const controller = new AbortController()
-      setTimeout(() => controller.abort(), 15000)
-      return fetch(url, {
-        ...options,
-        // Shorter timeout for better UX
-        signal: controller.signal, 
-      })
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // Increased to 30s
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+        })
+        clearTimeout(timeoutId)
+        return response
+      } catch (error) {
+        clearTimeout(timeoutId)
+        // Handle different error types
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('Request timeout - please check your connection')
+          }
+          if (error.message.includes('Failed to fetch')) {
+            throw new Error('Network error - please check your internet connection')
+          }
+        }
+        throw error
+      }
     }
   },
   // Realtime optimizations

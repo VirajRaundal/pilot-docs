@@ -7,33 +7,51 @@ interface QueryClientProviderProps {
   children: React.ReactNode
 }
 
-// Create a stable QueryClient instance
-const createQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Cache for 5 minutes
-      staleTime: 1000 * 60 * 5,
-      // Keep in cache for 10 minutes when unused
-      gcTime: 1000 * 60 * 10,
-      // Retry failed requests once
-      retry: 1,
-      // Don't refetch on window focus to prevent errors
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-
 export default function QueryClientProvider({ children }: QueryClientProviderProps) {
-  const [queryClient] = useState(createQueryClient)
+  const [queryClient, setQueryClient] = useState<QueryClient | null>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Create QueryClient only on client-side to prevent SSR issues
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: {
+          // Cache for 5 minutes
+          staleTime: 1000 * 60 * 5,
+          // Keep in cache for 10 minutes when unused  
+          gcTime: 1000 * 60 * 10,
+          // Don't refetch on window focus to prevent errors
+          refetchOnWindowFocus: false,
+          // Enhanced error handling for production
+          retry: (failureCount, error) => {
+            // Don't retry on 4xx errors
+            if (error && typeof error === 'object' && 'status' in error) {
+              const status = (error as { status: number }).status
+              if (status >= 400 && status < 500) return false
+            }
+            return failureCount < 2
+          },
+        },
+        mutations: {
+          // Add global error handling for mutations
+          retry: false,
+        },
+      },
+    })
+    
+    setQueryClient(client)
     setMounted(true)
   }, [])
 
-  // Don't render until mounted to prevent hydration mismatch
-  if (!mounted) {
-    return <div suppressHydrationWarning>{children}</div>
+  // Show loading state until QueryClient is ready
+  if (!mounted || !queryClient) {
+    return (
+      <div suppressHydrationWarning>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    )
   }
 
   return (

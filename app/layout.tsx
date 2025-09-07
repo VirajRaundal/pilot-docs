@@ -30,18 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Preconnect to external domains for better performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        
-        {/* DNS prefetch for external services */}
-        <link rel="dns-prefetch" href="//www.googletagmanager.com" />
-        <link rel="dns-prefetch" href="//www.google-analytics.com" />
-        
         {/* Permissions Policy */}
         <meta httpEquiv="Permissions-Policy" content="browsing-topics=()" />
-        
-        {/* Resource hints for critical assets */}
         
         {/* Critical CSS inline (if any) */}
         <style dangerouslySetInnerHTML={{
