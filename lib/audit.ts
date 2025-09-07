@@ -93,7 +93,7 @@ export async function getAuditLogs(filters: AuditFilters = {}): Promise<{
   }
 }
 
-// Get audit logs with user details (using the view)
+// Get audit logs with user details (using the view, with fallback)
 export async function getAuditLogsWithDetails(filters: AuditFilters = {}): Promise<{
   data: (AuditLog & {
     first_name?: string
@@ -116,6 +116,7 @@ export async function getAuditLogsWithDetails(filters: AuditFilters = {}): Promi
       offset = 0
     } = filters
 
+    // Try using the view first
     let query = supabase
       .from('audit_logs_with_details')
       .select('*', { count: 'exact' })
@@ -143,6 +144,46 @@ export async function getAuditLogsWithDetails(filters: AuditFilters = {}): Promi
     const { data, error, count } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
+
+    // If the view doesn't exist, fall back to basic audit logs
+    if (error && error.message.includes('audit_logs_with_details')) {
+      console.warn('View audit_logs_with_details not found, falling back to basic audit logs')
+      
+      let fallbackQuery = supabase
+        .from('audit_logs')
+        .select('*', { count: 'exact' })
+
+      // Apply same filters to fallback query
+      if (tableName) {
+        fallbackQuery = fallbackQuery.eq('table_name', tableName)
+      }
+      if (actionType) {
+        fallbackQuery = fallbackQuery.eq('action_type', actionType)
+      }
+      if (userId) {
+        fallbackQuery = fallbackQuery.eq('user_id', userId)
+      }
+      if (userEmail) {
+        fallbackQuery = fallbackQuery.ilike('user_email', `%${userEmail}%`)
+      }
+      if (startDate) {
+        fallbackQuery = fallbackQuery.gte('created_at', startDate)
+      }
+      if (endDate) {
+        fallbackQuery = fallbackQuery.lte('created_at', endDate)
+      }
+
+      const fallbackResult = await fallbackQuery
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (fallbackResult.error) {
+        console.error('Error fetching audit logs (fallback):', fallbackResult.error)
+        return { data: [], error: fallbackResult.error.message, count: null }
+      }
+
+      return { data: fallbackResult.data || [], error: null, count: fallbackResult.count }
+    }
 
     if (error) {
       console.error('Error fetching audit logs with details:', error)
@@ -195,7 +236,11 @@ export async function getAuditStatistics(
 
 // Export audit logs to CSV
 export async function exportAuditLogsToCSV(filters: AuditFilters = {}): Promise<string> {
-  const { data } = await getAuditLogsWithDetails({ ...filters, limit: 10000 })
+  const { data, error } = await getAuditLogsWithDetails({ ...filters, limit: 10000 })
+  
+  if (error) {
+    throw new Error(`Failed to fetch audit logs: ${error}`)
+  }
   
   if (!data || data.length === 0) {
     throw new Error('No data to export')
@@ -241,7 +286,11 @@ export async function exportAuditLogsToCSV(filters: AuditFilters = {}): Promise<
 
 // Export audit logs to JSON
 export async function exportAuditLogsToJSON(filters: AuditFilters = {}): Promise<string> {
-  const { data } = await getAuditLogsWithDetails({ ...filters, limit: 10000 })
+  const { data, error } = await getAuditLogsWithDetails({ ...filters, limit: 10000 })
+  
+  if (error) {
+    throw new Error(`Failed to fetch audit logs: ${error}`)
+  }
   
   if (!data || data.length === 0) {
     throw new Error('No data to export')
