@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
 import { assignUserRole, updateUserRole, getUserRole, UserRole } from '../../lib/roles'
 import { UserPlusIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'

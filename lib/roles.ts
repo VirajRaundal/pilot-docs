@@ -21,7 +21,7 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
       return null
     }
 
-    return data?.role || null
+    return (data as unknown as { role?: UserRole })?.role || null
   } catch (error) {
     console.error('Error in getUserRole:', error)
     return null
@@ -51,7 +51,7 @@ export async function assignUserRole(userId: string, role: UserRole): Promise<bo
           user_id: userId,
           role: role
         }
-      ])
+      ] as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select()
 
     if (error) {
@@ -90,7 +90,7 @@ export function isPilot(user: UserWithRole): boolean {
 // Update existing user role
 export async function updateUserRole(userId: string, role: UserRole): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .from('user_roles')
       .update({ role })
       .eq('user_id', userId)

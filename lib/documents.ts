@@ -75,7 +75,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
         last_name: user?.user_metadata?.last_name || 'Pilot',
         email: user?.email || 'user@example.com',
         status: 'active' as const
-      } as any)
+      } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select('id')
       .single() as unknown as Promise<{ data: { id: string } | null; error: Error | null }>)
 
@@ -118,7 +118,7 @@ export async function saveDocumentMetadata(
         upload_date: new Date().toISOString(),
         expiry_date: documentData.expiry_date || null,
         status: documentData.status || 'pending'
-      })
+      } as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .select()
       .single()
 
@@ -283,7 +283,7 @@ export async function updateDocumentStatus(
   status: DocumentStatus
 ): Promise<Document> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await ((supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
       .from('documents')
       .update({
         status,
@@ -291,7 +291,7 @@ export async function updateDocumentStatus(
       })
       .eq('id', documentId)
       .select()
-      .single()
+      .single() as Promise<{ data: Document | null; error: Error | null }>)
 
     if (error) {
       throw new Error('Error updating document status: ' + error.message)
@@ -497,7 +497,7 @@ export async function getUserDashboardData(userId: string): Promise<{
           stats.expired++
         } else if (expiryDate <= futureDate) {
           stats.expiringSoon++
-          expiringDocuments.push(typedDoc)
+          expiringDocuments.push(typedDoc as DocumentWithPilot)
         }
       }
     }

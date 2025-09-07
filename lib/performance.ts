@@ -45,13 +45,13 @@ export class PerformanceMonitor {
       const webVitals = await import('web-vitals')
       
       // Core Web Vitals
-      webVitals.getCLS(this.onCLS.bind(this))
-      webVitals.getFID(this.onFID.bind(this))
-      webVitals.getLCP(this.onLCP.bind(this))
+      webVitals.onCLS(this.onCLS.bind(this))
+      webVitals.onINP(this.onFID.bind(this)) // FID replaced by INP in v4
+      webVitals.onLCP(this.onLCP.bind(this))
       
       // Additional metrics
-      webVitals.getFCP(this.onFCP.bind(this))
-      webVitals.getTTFB(this.onTTFB.bind(this))
+      webVitals.onFCP(this.onFCP.bind(this))
+      webVitals.onTTFB(this.onTTFB.bind(this))
     } catch (error) {
       console.warn('Web Vitals not available:', error)
     }
