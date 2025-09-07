@@ -4,11 +4,7 @@ import type { Database } from './database.types'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Add debugging for production (client-side only)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('🔧 Supabase URL configured:', supabaseUrl ? 'YES' : 'NO')
-  console.log('🔧 Supabase Key configured:', supabaseAnonKey ? 'YES' : 'NO')
-}
+// Removed debug logs for security
 
 // Enhanced Supabase client with performance optimizations
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {

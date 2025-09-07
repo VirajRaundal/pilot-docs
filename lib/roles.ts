@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { User } from '@supabase/supabase-js'
+import { logger } from './logger'
 
 export type UserRole = 'pilot' | 'admin' | 'inspector'
 
@@ -17,13 +18,13 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
       .maybeSingle()  // Use maybeSingle instead of single to avoid errors when no row exists
 
     if (error) {
-      console.error('Error fetching user role:', error)
+      logger.error('Error fetching user role')
       return null
     }
 
     return (data as unknown as { role?: UserRole })?.role || null
   } catch (error) {
-    console.error('Error in getUserRole:', error)
+    logger.error('Error in getUserRole')
     return null
   }
 }
@@ -39,7 +40,7 @@ export async function assignUserRole(userId: string, role: UserRole): Promise<bo
       .single()
 
     if (existingRole) {
-      console.log('User already has a role assigned')
+      // User already has a role assigned
       return true
     }
 
@@ -55,14 +56,13 @@ export async function assignUserRole(userId: string, role: UserRole): Promise<bo
       .select()
 
     if (error) {
-      console.error('Error assigning user role:', error)
+      logger.error('Error assigning user role')
       return false
     }
 
-    console.log('Role assigned successfully:', data)
     return true
   } catch (error) {
-    console.error('Error in assignUserRole:', error)
+    logger.error('Error in assignUserRole')
     return false
   }
 }
@@ -96,14 +96,13 @@ export async function updateUserRole(userId: string, role: UserRole): Promise<bo
       .eq('user_id', userId)
 
     if (error) {
-      console.error('Error updating user role:', error)
+      logger.error('Error updating user role')
       return false
     }
 
-    console.log('Role updated successfully')
     return true
   } catch (error) {
-    console.error('Error in updateUserRole:', error)
+    logger.error('Error in updateUserRole')
     return false
   }
 }

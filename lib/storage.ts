@@ -39,7 +39,7 @@ export async function uploadPilotDocument(
       fullPath: filePath
     }
   } catch (error) {
-    console.error('Upload error:', error)
+    // Upload failed
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Upload failed'
@@ -50,29 +50,23 @@ export async function uploadPilotDocument(
 // Get signed URL for viewing documents
 export async function getDocumentUrl(filePath: string) {
   try {
-    console.log('Getting signed URL for file path:', filePath)
-    
     const { data, error } = await supabase.storage
       .from('pilot-documents')
       .createSignedUrl(filePath, 3600) // 1 hour expiry
 
     if (error) {
-      console.error('Supabase storage error:', error)
       throw error
     }
 
     if (!data || !data.signedUrl) {
-      console.error('No signed URL returned from Supabase')
       throw new Error('No signed URL returned')
     }
 
-    console.log('Successfully generated signed URL')
     return {
       success: true,
       url: data.signedUrl
     }
   } catch (error) {
-    console.error('Error in getDocumentUrl:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get URL'

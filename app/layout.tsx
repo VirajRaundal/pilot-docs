@@ -1,9 +1,19 @@
 import type { Metadata } from 'next'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 import QueryClientProvider from './components/QueryClientProvider'
 import ServiceWorkerInit from './components/ServiceWorkerInit'
 import OptimizedScripts from './components/OptimizedScripts'
 import './globals.css'
+
+// Conditional Speed Insights - only load in production on Vercel
+let SpeedInsights: React.ComponentType = () => null
+try {
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    SpeedInsights = require('@vercel/speed-insights/next').SpeedInsights as React.ComponentType
+  }
+} catch {
+  // Speed Insights not available, use null component
+}
 
 export const metadata: Metadata = {
   title: 'Pilot Management',

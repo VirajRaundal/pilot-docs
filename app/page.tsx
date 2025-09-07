@@ -33,7 +33,6 @@ export default function Home() {
     // Add timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
       if (loading) {
-        console.warn('⚠️ Authentication timeout - falling back to login form')
         setError('Authentication took too long. Please try logging in manually.')
         setLoading(false)
       }
@@ -42,14 +41,11 @@ export default function Home() {
     // Get initial session
     const getSession = async () => {
       try {
-        console.log('🔍 Checking for cached session...')
-        
         // First check cached session
         const cachedSession = getCachedSession()
         if (cachedSession?.user) {
           const cachedRole = getCachedUserRole(cachedSession.user.id)
           if (cachedRole) {
-            console.log('✅ Using cached session and role:', cachedRole)
             // Use cached data immediately for faster loading
             const userWithRole: UserWithRole = {
               ...cachedSession.user,
@@ -61,27 +57,22 @@ export default function Home() {
           }
         }
 
-        console.log('🔍 Fetching fresh session from Supabase...')
         // Fall back to Supabase session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('❌ Supabase session error:', error)
           setError(`Authentication error: ${error.message}`)
           setLoading(false)
           return
         }
         
         if (session?.user) {
-          console.log('✅ Got session, loading user role...')
           setCachedSession(session)
           await loadUserWithRole(session.user)
         } else {
-          console.log('ℹ️ No active session, showing auth form')
           setLoading(false)
         }
       } catch (err) {
-        console.error('❌ Session initialization error:', err)
         setError(err instanceof Error ? err.message : 'Failed to initialize session')
         setLoading(false)
       }
@@ -126,28 +117,19 @@ export default function Home() {
   }
 
   const loadUserWithRole = async (authUser: User) => {
-    try {
-      console.log('👤 Loading role for user:', authUser.id)
-      
+    try {      
       // First check cache for role
       let role = getCachedUserRole(authUser.id)
-      console.log('🔍 Cached role:', role)
       
       // If not in cache, fetch from database
       if (!role) {
-        console.log('📡 Fetching role from database...')
         role = await getUserRole(authUser.id)
-        console.log('📡 Database role result:', role)
         
         // If user doesn't have a role yet, assign them as 'pilot' by default
         if (!role) {
-          console.log('🔧 No role found, assigning default pilot role...')
           const assigned = await assignUserRole(authUser.id, 'pilot')
           if (assigned) {
             role = 'pilot'
-            console.log('✅ Default role assigned:', role)
-          } else {
-            console.error('❌ Failed to assign default role')
           }
         }
         
@@ -163,16 +145,14 @@ export default function Home() {
         role: role || undefined
       }
 
-      console.log('✅ User loaded with role:', role)
       setUser(userWithRole)
       
       // Prefetch user-specific data after successful authentication
       if (role && shouldPrefetch()) {
         prefetchUserData(queryClient, authUser.id, role)
-          .catch(console.error)
+          .catch(() => {}) // Silent fail for prefetch
       }
     } catch (error) {
-      console.error('❌ Error loading user role:', error)
       setError(`Failed to load user role: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setUser({ ...authUser, role: undefined })
     } finally {
