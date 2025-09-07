@@ -1,6 +1,5 @@
 import { supabase } from './supabase'
 import { uploadPilotDocument, getDocumentUrl, deleteDocument } from './storage'
-import type { Database } from './database.types'
 
 // Document types
 export type DocumentType = 'noc' | 'medical_certificate' | 'alcohol_test' | 'license_certification' | 'training_records'
@@ -59,7 +58,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
     }
 
     if (existingPilot) {
-      return (existingPilot as any).id
+      return existingPilot.id
     }
 
     // Get user info from auth
@@ -67,7 +66,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
     if (userError) throw userError
 
     // Create pilot record if it doesn't exist
-    const { data: newPilot, error: createPilotError } = await (supabase as any)
+    const { data: newPilot, error: createPilotError } = await supabase
       .from('pilots')
       .insert({
         user_id: userId,
@@ -84,7 +83,7 @@ export async function getOrCreatePilotRecord(userId: string): Promise<string> {
       throw new Error('Error creating pilot record: ' + createPilotError.message)
     }
 
-    return (newPilot as any).id
+    return newPilot?.id || ''
   } catch (error) {
     console.error('Error in getOrCreatePilotRecord:', error)
     throw error
@@ -107,7 +106,7 @@ export async function saveDocumentMetadata(
   }
 ): Promise<Document> {
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('documents')
       .insert({
         pilot_id: pilotId,
@@ -284,7 +283,7 @@ export async function updateDocumentStatus(
   status: DocumentStatus
 ): Promise<Document> {
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('documents')
       .update({
         status,
@@ -361,7 +360,7 @@ export async function getDocumentWithUrl(documentId: string): Promise<{
     }
 
     // Get signed URL
-    const typedDoc = document as any
+    const typedDoc = document as Document
     const urlResult = await getDocumentUrl(typedDoc.file_url)
     if (!urlResult.success) {
       throw new Error(`Error getting document URL: ${urlResult.error || 'Unknown error'}`)
@@ -484,7 +483,7 @@ export async function getUserDashboardData(userId: string): Promise<{
 
     // Calculate stats and filter expiring docs in a single pass
     for (const doc of documents) {
-      const typedDoc = doc as any
+      const typedDoc = doc as Document
       // Status counts
       if (typedDoc.status === 'pending') stats.pending++
       else if (typedDoc.status === 'approved') stats.approved++
@@ -560,7 +559,7 @@ export async function getAdminOverview(): Promise<{
     }
 
     const documents = documentsQuery.data || []
-    const pendingCount = documents.filter(d => (d as any).status === 'pending').length
+    const pendingCount = documents.filter(d => (d as Document).status === 'pending').length
 
     return {
       totalUsers: pilotsQuery.count || 0,

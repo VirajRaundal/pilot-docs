@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { uploadPilotDocument, validateFile } from '../../lib/storage'
+import { getOrCreatePilotRecord, saveDocumentMetadata } from '../../lib/documents'
 import { supabase } from '../../lib/supabase'
 import { CloudArrowUpIcon, DocumentIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
@@ -93,46 +94,22 @@ export default function DocumentUpload({ userId, onUploadSuccess }: DocumentUplo
       }
 
       if (!existingPilot) {
-        // Create pilot record if it doesn't exist
-        const { data: newPilot, error: createPilotError } = await (supabase
-          .from('pilots')
-          .insert({
-            user_id: userId,
-            pilot_license: 'TEMP-' + Date.now(), // Temporary license number
-            first_name: 'User',
-            last_name: 'Pilot',
-            email: 'user@example.com', // Will be updated later
-            status: 'active'
-          }) as any) // Type assertion needed for Supabase insert operation compatibility
-          .select('id')
-          .single()
-
-        if (createPilotError) {
-          throw new Error('Error creating pilot record: ' + createPilotError.message)
-        }
-
-        pilotId = newPilot.id
+        // Use the helper function from documents.ts to create pilot record
+        pilotId = await getOrCreatePilotRecord(userId)
       } else {
-        pilotId = existingPilot.id
+        pilotId = (existingPilot as { id: string }).id
       }
 
-      // Save document metadata to database
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          pilot_id: pilotId,
-          document_type: documentType,
-          title: title.trim(),
-          file_url: uploadResult.fullPath,
-          file_size: selectedFile.size,
-          file_type: selectedFile.type,
-          expiry_date: expiryDate || null,
-          status: 'pending'
-        })
-
-      if (dbError) {
-        throw new Error(dbError.message)
-      }
+      // Save document metadata to database using helper function
+      await saveDocumentMetadata(pilotId, {
+        document_type: documentType,
+        title: title.trim(),
+        file_url: uploadResult.fullPath || uploadResult.path || '',
+        file_size: selectedFile.size,
+        file_type: selectedFile.type,
+        expiry_date: expiryDate || undefined,
+        status: 'pending'
+      })
 
       toast.success('Document uploaded successfully!')
       

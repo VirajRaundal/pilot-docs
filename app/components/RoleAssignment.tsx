@@ -34,10 +34,10 @@ export default function RoleAssignment() {
 
       if (existingRole) {
         // Update existing role
-        const { error } = await supabase
+        const { error } = await (supabase
           .from('user_roles')
-          .update({ role })
-          .eq('user_id', userId.trim())
+          .update({ role } as { role: 'pilot' | 'admin' | 'inspector' })
+          .eq('user_id', userId.trim()) as Promise<{ error: Error | null }>)
 
         if (error) throw error
         toast.success(`Role updated to ${role}`)

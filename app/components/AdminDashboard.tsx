@@ -114,14 +114,14 @@ export default function AdminDashboard({ userId: _userId }: AdminDashboardProps)
     try {
       const { data: pilots, error } = await supabase
         .from('pilots')
-        .select('status')
+        .select('id, status') as { data: Array<{ id: string; status: 'active' | 'inactive' | 'suspended' }> | null; error: Error | null }
 
       if (error) throw error
 
       const stats: PilotStats = {
         total: pilots?.length || 0,
-        active: pilots?.filter(p => p && 'status' in p && p.status === 'active').length || 0,
-        inactive: pilots?.filter(p => p && 'status' in p && p.status !== 'active').length || 0
+        active: pilots?.filter(p => p.status === 'active').length || 0,
+        inactive: pilots?.filter(p => p.status !== 'active').length || 0
       }
       
       setPilotStats(stats)
