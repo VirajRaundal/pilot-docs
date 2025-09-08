@@ -14,7 +14,8 @@
       "Bash(NODE_ENV=production npm run build)",
       "Bash(find:*)",
       "Bash(vercel:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
